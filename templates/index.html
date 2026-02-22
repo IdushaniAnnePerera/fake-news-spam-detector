@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fake News / Spam Detector</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem auto; max-width: 840px; padding: 0 1rem; }
+    textarea { width: 100%; min-height: 140px; padding: 0.75rem; }
+    .row { display: flex; gap: 1rem; margin: 1rem 0; align-items: center; flex-wrap: wrap; }
+    button { padding: 0.6rem 1rem; cursor: pointer; }
+    .card { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+    .muted { color: #666; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Fake News / Spam Detection (NLP)</h1>
+  <p class="muted">Choose task, paste text, and get label + confidence.</p>
+
+  <label for="task">Task</label>
+  <select id="task">
+    <option value="spam">Spam vs Not Spam (ham)</option>
+    <option value="fake_news">Fake vs Real News</option>
+  </select>
+
+  <div class="row">
+    <label><input type="checkbox" id="use_transformer" /> Use Transformer (zero-shot)</label>
+  </div>
+
+  <label for="text">Input text/news/email</label>
+  <textarea id="text" placeholder="Paste your message or news content here..."></textarea>
+
+  <div class="row">
+    <button onclick="runPrediction()">Predict</button>
+  </div>
+
+  <div id="result" class="card" style="display:none"></div>
+
+  <script>
+    async function runPrediction() {
+      const task = document.getElementById('task').value;
+      const text = document.getElementById('text').value.trim();
+      const use_transformer = document.getElementById('use_transformer').checked;
+      const result = document.getElementById('result');
+
+      if (text.length < 3) {
+        result.style.display = 'block';
+        result.innerHTML = '<strong>Please enter at least 3 characters.</strong>';
+        return;
+      }
+
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ task, text, use_transformer })
+      });
+
+      const data = await res.json();
+      result.style.display = 'block';
+      result.innerHTML = `
+        <h3>Prediction Result</h3>
+        <p><strong>Task:</strong> ${data.task}</p>
+        <p><strong>Label:</strong> ${data.label}</p>
+        <p><strong>Confidence:</strong> ${Number(data.confidence).toFixed(4)}</p>
+        <p><strong>Model:</strong> ${data.model}</p>
+        <pre>${JSON.stringify(data.scores, null, 2)}</pre>
+      `;
+    }
+  </script>
+</body>
+</html>
